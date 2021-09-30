@@ -1,14 +1,14 @@
+import asyncio
 import logging
+import random
 from typing import Any, Mapping, cast
-
-from aries_cloudagent.config.settings import Settings
 
 from aiokafka import AIOKafkaConsumer
 from aiokafka.structs import ConsumerRecord
+from aries_cloudagent.config.settings import Settings
 from aries_cloudagent.messaging.error import MessageParseError
 from aries_cloudagent.transport.error import WireFormatParseError
 from aries_cloudagent.transport.inbound.base import BaseInboundTransport
-
 
 LOGGER = logging.getLogger(__name__)
 
@@ -64,10 +64,20 @@ class KafkaInboundTransport(BaseInboundTransport):
                     accept_undelivered=False, can_respond=False
                 )
                 async with session:
-                    try:
-                        await session.receive(cast(bytes, msg.value))
-                    except (MessageParseError, WireFormatParseError):
-                        LOGGER.exception("Failed to process message")
+                    retry = 5
+                    backoff = 1
+                    x = 0
+                    while x != retry:
+                        try:
+                            await session.receive(cast(bytes, msg.value))
+                        except (MessageParseError, WireFormatParseError):
+                            LOGGER.exception("Failed to process message")
+                            x = retry
+                        except Exception:
+                            LOGGER.info("sleeping for retry attempt.")
+                            sleep = backoff * 2 ** x + random.uniform(0, 1)
+                            await asyncio.sleep(sleep)
+                            x += 1
 
     async def stop(self):
         await self.consumer.stop()
