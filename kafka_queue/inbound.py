@@ -64,12 +64,13 @@ class KafkaInboundTransport(BaseInboundTransport):
                     accept_undelivered=False, can_respond=False
                 )
                 async with session:
+                    message = cast(bytes, msg.value)
                     retry = 5
                     backoff = 1
                     x = 0
                     while x != retry:
                         try:
-                            await session.receive(cast(bytes, msg.value))
+                            await session.receive(message)
                         except (MessageParseError, WireFormatParseError):
                             LOGGER.exception("Failed to process message")
                             x = retry
