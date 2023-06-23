@@ -115,9 +115,7 @@ class KafkaOutboundQueue(BaseOutboundTransport):
         )
 
         topic = self.config.topic
-        partition_key = ",".join(
-            _recipients_from_packed_message(outbound_message.payload)
-        ).encode()
+        partition_key = None # ",".join(_recipients_from_packed_message(payload)).encode()
 
         try:
             LOGGER.info(

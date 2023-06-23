@@ -88,7 +88,7 @@ async def handle_event(profile: Profile, event: EventWithMetadata):
         await producer.send_and_wait(
             kafka_topic,
             str.encode(json.dumps(payload)),
-            key=wallet_id.encode() if wallet_id else None,
+            key=None, # wallet_id.encode() if wallet_id else None,
         )
     except Exception:
         LOGGER.exception("Kafka producer failed to send message")
